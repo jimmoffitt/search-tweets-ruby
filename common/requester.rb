@@ -70,6 +70,11 @@ class Requester
 		request = Net::HTTP::Post.new(uri.path)
 		request.body = @data
 
+		if !@headers.nil?
+			tokens = @headers.split('|')
+			request[tokens[0]] = tokens[1]
+		end
+
 		if @search_type == 'premium'
 			request['Authorization'] = "Bearer #{@app_token}"
 		else

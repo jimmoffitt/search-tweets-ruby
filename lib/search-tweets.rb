@@ -12,9 +12,9 @@ class TweetSearch
 	require_relative "../common/requester"
 	require_relative "../common/rules"
 	require_relative "../common/url_maker"
-	require_relative "../common/utilities.rb"
-	#require_relative "../common/database"
-
+	require_relative "../common/datastore"
+	require_relative "../common/utilities.rb" #Mixin code.
+	
 	API_ACTIVITY_LIMIT = 500 #Limit on the number of activity IDs per Rehydration API request, can be overridden.
 
 	attr_accessor :search_type,
@@ -32,15 +32,8 @@ class TweetSearch
 	              :count_page_total, #total of individual bucket counts per page/response.
 	              :count_total,
 
-	              #[] TODO: --> Auth
 	              :auth,
-	              #:app_token,
-	              #:password, :password_encoded, #System authentication.
-
-	              #[] TODO: --> labels{}
 	              :labels,
-	              #:account_name,
-	              #:label,
 
 	              #Filters/Rules details. This client can load an array of filters from files (YAML or JSON) 
 	              :rules, #rules object.
@@ -52,6 +45,7 @@ class TweetSearch
 	              :in_box,
 	              :out_box,
 	              :compress_files,
+	              :datastore, #Knows how to store Tweets.
 	              
 	              :exit_after,
 	              :request_count,
@@ -75,6 +69,7 @@ class TweetSearch
 		@requester = Requester.new #HTTP helper class.
 		@url_maker = URLMaker.new #Abstracts away the URL details... 
 		@rules = PtRules.new #Can load rules from configuration files.
+		@datastore = Datastore.new
 
 		@exit_after = nil
 		@request_count = 0
@@ -103,7 +98,10 @@ class TweetSearch
 		@auth[:app_token] = config['auth']['app_token'] #Required.
 		if !config['auth']['password'].nil? #Only for enterprise BASIC auth. 
 			@auth[:password] = config['auth']['password']
-    end
+		end
+		if !config['auth']['headers'].nil?
+			@auth[:headers] = config['auth']['headers']
+		end
 
 	  
 
@@ -151,6 +149,7 @@ class TweetSearch
 		@requester.search_type = @search_type
 		@requester.app_token = @auth[:app_token] #Set the info needed for authentication.
 		@requester.password = @auth[:password] #HTTP class can decrypt password.
+		@requester.headers = @auth[:headers]
 
 		#@urlData = @requester.getFaSearchURL(@account_name, @environment)
 		@urlData = @url_maker.getDataURL(@search_type, @archive, @labels)
@@ -358,7 +357,7 @@ class TweetSearch
 
 				puts "Storing Search API data in file: #{filename}"
 				File.open("#{@out_box}/#{filename}.json", "w") do |new_file|
-					new_file.write_mode(temp.to_json)
+					new_file.write(temp.to_json)
 				end
 			end
 		else
@@ -418,22 +417,20 @@ class TweetSearch
 				end
 			else
 				File.open("#{@out_box}/#{filename}.json", "w") do |new_file|
-					new_file.write_mode(api_response.to_json)
+					new_file.write(api_response.to_json)
 				end
 			end
-=begin
-		elsif @write_mode == "database" #store in database.
-			puts "Storing Search API data in database..."
+		elsif @write_mode == "datastore" #store in database.
+			puts "Storing Tweet data in data store..."
 
 			results = []
 			results = api_response['results']
 
-			results.each do |activity|
+			results.each do |tweet|
 
 				#p activity
-				@datastore.storeActivity(activity.to_json)
+				@datastore.storeTweet(tweet.to_json)
 			end
-=end
 		else #Standard out
 			results = []
 			results = api_response['results']

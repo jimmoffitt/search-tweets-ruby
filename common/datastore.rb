@@ -38,7 +38,7 @@ class Datastore
 
 
     def to_s
-        "Datastore object => " + @host + ":" + @port.to_s + "@" + @credentials['username'] + " schema:" + @collection
+        "Datastore object => " + @host + ":" + @port.to_s + "@" + @credentials['user_name'] + " schema:" + @collection
     end
     
     #Fundamental design question: Connect to data store when creating object, a singleton that persists the connection
