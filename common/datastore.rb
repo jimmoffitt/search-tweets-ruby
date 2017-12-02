@@ -12,17 +12,20 @@
 
 class Datastore
 
-    attr_accessor :host, 
-	          :port, 
-	          :credentials, 
-	          :collection
+    attr_accessor :host,                 # Where datastore is hosted. local, internal, or on the cloud.
+	          :port,                 # Common defaults: MySQL: 3306, MongoDB: ?, SQL Server 1433, PostgreSQL: 5432
+	          :credentials,          # Flexible hash that holds datastore-specific creds for connection authentication.
+	                                 # Most datastores have username and passwords, but should anticipate using keys and tokens.
+	          :collection            # For relational databases, this is the *schema* or *database* name. Separate "collections" 
+	                                 # will need Tweet level *project name* tags. 
+	                                 # For NoSQL datastores, this is the "collection" name. A Folder of Tweets. 
 
     def initialize(host=nil, port=nil, auth=nil, collection=nil)
 
 	    if host.nil? 
-		    @host = 'localhost' # or '127.0.0.1' #Local host is default.
+		@host = 'localhost' # or '127.0.0.1' #Local host is default.
 	    else
-		    @host = host
+		@host = host
 	    end 
 	
 	    @auth = {}
