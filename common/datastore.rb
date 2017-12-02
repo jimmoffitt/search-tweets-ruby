@@ -1,14 +1,17 @@
 # Singleton class that provides a 'datastore' object that knows how to store data.
-# 
+ 	
 
 # Client usage:    require_relative './common/datastore.rb'
 #                  datastore = Datastore.new(config)
 #                 
-#                  datastore.open
+#                  datastore.connect
 #                  #Iterate through Tweets
 #                       datastore.storeTweet(tweet.json)
-#                  datastore.close
+#                  datastore.disconnect
 
+
+require_relative '/datastores/mysql.rb'
+require_relative '/datastores/mongo.rb'
 
 class Datastore
 
@@ -16,9 +19,14 @@ class Datastore
 	          :port,                 # Common defaults: MySQL: 3306, MongoDB: ?, SQL Server 1433, PostgreSQL: 5432
 	          :credentials,          # Flexible hash that holds datastore-specific creds for connection authentication.
 	                                 # Most datastores have username and passwords, but should anticipate using keys and tokens.
-	          :collection            # For relational databases, this is the *schema* or *database* name. Separate "collections" 
+	          :collection,           # For relational databases, this is the *schema* or *database* name. Separate "collections" 
 	                                 # will need Tweet level *project name* tags. 
 	                                 # For NoSQL datastores, this is the "collection" name. A Folder of Tweets. 
+	          :connected,            # Enables client app to confirm state.
+	         
+	          :type,                 # Types: 'relational', 'nosql' 
+	          :client                # datastore 'engine'. One usage is to indicate a collection name and store type: 'dev-mysql'
+	 
 
     def initialize(host=nil, port=nil, auth=nil, collection=nil)
 
@@ -66,13 +74,18 @@ class Datastore
     # until the calling app exits.  OR -- other extreme, do we open/close per Tweet? Don't think so. With Search we
     # should at least open/close per request, and batch REPLACE up to 500 Tweets.
 
+    #Make connection to database. 	
     def connect
-       @client = nil
-       #Make connection to database.
+       #Connect to datastore, requires authentication, and returns this singleton object. 
+       #
+       @connected = true	    
+       	    
+       
     end
 
     def disconnect
         @client.close
+        @connected = true	
     end
 
     def storeTweet(tweet)
