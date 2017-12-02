@@ -1,16 +1,34 @@
+# Singleton class that provides a 'datastore' object that knows how to store data.
+# 
+
+# Client usage:    require_relative './common/datastore.rb'
+#                  datastore = Datastore.new(config)
+#                 
+#                  datastore.open
+#                  #Iterate through Tweets
+#                       datastore.storeTweet(tweet.json)
+#                  datastore.close
+
+
 class Datastore
 
-    attr_accessor :client, :host, :port, :credentials, :collection
+    attr_accessor :host, 
+	          :port, 
+	          :credentials, 
+	          :collection
 
     def initialize(host=nil, port=nil, auth=nil, collection=nil)
 
 	    if host.nil? 
-		    @host = '127.0.0.1' #Local host is default.
+		    @host = 'localhost' # or '127.0.0.1' #Local host is default.
 	    else
 		    @host = host
 	    end 
-			
-			auth = {}
+	
+	    @auth = {}
+	    if !auth.nil? 
+               @auth = auth		    
+	    end
 
     end
 
