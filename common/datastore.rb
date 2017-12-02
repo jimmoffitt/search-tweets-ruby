@@ -47,17 +47,15 @@ class Datastore
 
     def connect
        @client = nil
-			 #Make connection to database.
+       #Make connection to database.
     end
 
     def disconnect
         @client.close
     end
-	
-	  def storeTweet(tweet)
-			
-			#Write Tweet to data store.
-			
-	  end
+
+    def storeTweet(tweet)
+	#Write Tweet to data store.
+    end
 
 end #Datastore class.
