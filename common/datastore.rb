@@ -10,8 +10,8 @@
 #                  datastore.disconnect
 
 
-require_relative '/datastores/mysql.rb'
-require_relative '/datastores/mongo.rb'
+require_relative '/datastores/relational.rb'
+require_relative '/datastores/nosql.rb'
 
 class Datastore
 
