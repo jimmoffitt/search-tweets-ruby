@@ -1,4 +1,5 @@
-# Ruby Tweet search client (new home is at https://github.com/twitterdev/search-tweets-ruby)
+# Ruby Tweet search client 
+## New home is at https://github.com/twitterdev/search-tweets-ruby.
 
 This Ruby client is written to work with the Twitter premium and enterprise versions of Tweet Search.  This client is a command-line app that supports the following features:
 
