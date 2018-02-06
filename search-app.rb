@@ -37,6 +37,7 @@ if __FILE__ == $0  #This script code is executed when running this file.
 
     require 'optparse'
     require 'base64'
+    
 
     OptionParser.new do |o|
 
@@ -76,6 +77,8 @@ if __FILE__ == $0  #This script code is executed when running this file.
         o.parse!
     end
 
+    puts "Starting at #{Time.now}"
+    
     #Create a Tweet Search object.
     oSearch = SearchTweets.new()
     oSearch.rules.rules = Array.new
@@ -179,6 +182,10 @@ if __FILE__ == $0  #This script code is executed when running this file.
 			if oSearch.write_mode == "so" or oSearch.write_mode == "standard"
 				oSearch.write_mode = "standard-out"
 			end
+
+			if oSearch.write_mode == "db"
+				oSearch.write_mode = "datastore"
+			end
 			
     end
 
@@ -219,5 +226,5 @@ if __FILE__ == $0  #This script code is executed when running this file.
         end
     end
     
-    puts "Exiting"
+    puts "Exiting at #{Time.now}"
 end
