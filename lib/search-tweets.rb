@@ -12,9 +12,9 @@ class SearchTweets
 	require_relative '../common/rules'
 	require_relative '../common/url_maker'
 	require_relative '../common/utilities.rb' #Mixin code.
-	#require_relative '../common/datastores/datastore'
+	require_relative '../common/datastores/datastore'
 	
-	API_ACTIVITY_LIMIT = 500 #Limit on the number of Tweet IDs per API request, can be overridden.
+	API_ACTIVITY_LIMIT = 100 #Limit on the number of Tweet IDs per API request, can be overridden.
 
 	attr_accessor :search_type,
 	              :archive,
@@ -44,7 +44,7 @@ class SearchTweets
 	              :in_box,
 	              :out_box,
 	              :compress_files,
-	              #:datastore, #Object that knows how to store Tweets.
+	              :datastore, #Object that knows how to store Tweets.
 	              
 	              :exit_after,       #Supports user option to quit after x requests.
 	              :request_count,    #Tracks how many requests have been made.
@@ -68,7 +68,7 @@ class SearchTweets
 		@requester = Requester.new #HTTP helper class.
 		@url_maker = URLMaker.new #Abstracts away the URL details... 
 		@rules = PtRules.new #Can load rules from configuration files.
-		#@datastore = Datastore.new
+		@datastore = Datastore.new
 
 		@exit_after = nil
 		@request_count = 0
@@ -84,6 +84,7 @@ class SearchTweets
 		
 		@search_type = config['options']['search_type']
 		@archive = config['options']['archive']
+		@max_results = config['options']['max_results']
 
 		#'Label' details needed for establishing endpoint URI.
 		@labels[:environment] = config['labels']['environment'] #Required.
@@ -424,16 +425,18 @@ class SearchTweets
 				end
 			end
 		elsif @write_mode == "datastore" #store in database.
-			puts "Storing Tweet data in data store..."
 
 			results = []
 			results = api_response['results']
 
-			results.each do |tweet|
+			puts "Storing #{results.length} Tweets in data store..."
 
-				#p activity
-				@datastore.storeTweet(tweet.to_json)
-			end
+			@datastore.store_batch_tweets(results)
+
+			#results.each do |tweet|
+			#	@datastore.store_tweet(tweet) #Sending in as dictionary/hash.
+			#end
+
 		else #Standard out
 			results = []
 			results = api_response['results']
@@ -517,7 +520,7 @@ class SearchTweets
 			
 			if !@exit_after.nil?
 				if @request_count >= @exit_after 
-					puts "Hit request threshold of #{@exit_after} requests. Quitting."
+					puts "Hit request threshold of #{@exit_after} requests. Quitting at #{Time.now}."
 					exit
 				end
 			end
