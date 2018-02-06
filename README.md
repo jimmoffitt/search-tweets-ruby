@@ -1,13 +1,5 @@
-```
-[] Add ENV credential options, move details to new Configuration class.
-[] Add url option, to simply configuration? Current design makes switching APIs easier?
-[] Add error handling for start-up/config issues. Currently, once the app is set-up, error handling is OK. 
-[] Fix needing to specify config path. Default is not working.
-```
-
--------------------------------------
-
-# Ruby Tweet search client
+# Ruby Tweet search client 
+## New home is at https://github.com/twitterdev/search-tweets-ruby.
 
 This Ruby client is written to work with the Twitter premium and enterprise versions of Tweet Search.  This client is a command-line app that supports the following features:
 
@@ -15,7 +7,7 @@ This Ruby client is written to work with the Twitter premium and enterprise vers
 	+ Premium Search Tweets: 30-day API
 	+ Enterprise 30-Day Search API
 	+ Enterprise Full-Archive API
-+ Can manage an array of filters, making requests for each.
++ Can manage an array of filters/rules/queries, making requests for each.
 + Returns total count for entire request period.
 + Supports flexible ways to specify search period. E.g., ```-s 7d``` specifies the past week. Other patterns such as ```YYYY-MM-DD HH:mm```, standard Twitter ISO timestamps, and the enterprise ```YYYYMMDDhhmm``` pattern are also supported.
 + Writes to files or standard out. When writing files, one file is written for every API response. File names are based on query syntax, and are serialized. (Writing to a datastore... coming soon?)
@@ -324,6 +316,21 @@ This iteration has the following updates from the [full-archive version](https:/
   + Add in queuing system, with timed clean-up? E.g., dropped every 15-minutes. 
 + Drops support for Activity Stream Tweet JSON format? Yes, if only to clean-up for blending in TweetParser class that holds all the logic. 
 + New common classes?: logging has been abstracted away into a [AppLogger](https://github.com/twitterdev/engagement-api-client-ruby/blob/master/common/app_logger.rb) class. Haven't plugged into this client yet... 
+
+
+
+=============================================
+To-dos:
+
+```
+[] Add ENV credential options, move details to new Configuration class?
+[] Add url option, to simply configuration? Current design makes switching APIs easier?
+[] Add error handling for start-up/config issues. Currently, once the app is set-up, error handling is OK. 
+[x] Fix needing to specify config path. Default is not working.
+```
+
+
+
 
 
 
