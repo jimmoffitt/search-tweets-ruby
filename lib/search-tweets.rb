@@ -12,7 +12,7 @@ class SearchTweets
 	require_relative '../common/rules'
 	require_relative '../common/url_maker'
 	require_relative '../common/utilities.rb' #Mixin code.
-	require_relative '../common/datastores/datastore'
+	require_relative '../common/mysql'
 	
 	API_ACTIVITY_LIMIT = 100 #Limit on the number of Tweet IDs per API request, can be overridden.
 
@@ -37,7 +37,7 @@ class SearchTweets
 	              #Filters/Rules details. This client can load an array of filters from files (YAML or JSON) 
 	              :rules, #rules object.
 	              :rules_file, #YAML (or JSON) file with rules.
-	              :write_rules, #[] TODO: ---> Append rule syntax to collected Tweet JSON. Written for AS, works with native?
+	              :save_syntax,
 
 	              #This client can write to standard-out, files, and soon data stores... 
 	              :write_mode, #files, standard out, data store
@@ -63,12 +63,12 @@ class SearchTweets
 		@out_box = './outbox'
 		@write_mode = 'files'
 		@counts_to_standard_out = false
+		@save_syntax = false
 
 		#Helper objects, singletons.
 		@requester = Requester.new #HTTP helper class.
 		@url_maker = URLMaker.new #Abstracts away the URL details... 
 		@rules = PtRules.new #Can load rules from configuration files.
-		@datastore = Datastore.new
 
 		@exit_after = nil
 		@request_count = 0
@@ -114,7 +114,9 @@ class SearchTweets
 =end
 
 		@write_mode = config['options']['write_mode']
+		@write_mode = 'database' if @write_mode == 'db'
 		@counts_to_standard_out = config['options']['counts_to_standard_out']
+		@save_syntax = config['options']['save_syntax']
 
 		begin
 			@out_box =  Utilities.checkDirectory(config['options']['out_box'])
@@ -128,18 +130,18 @@ class SearchTweets
 			@compress_files = false
 		end
 
-=begin
 		if @write_mode == 'database' #Get database connection details.
-			db_host = config['database']['host']
-			db_port = config['database']['port']
-			db_schema = config['database']['schema']
-			db_user_name = config['database']['user_name']
-			db_password = config['database']['password']
+			host = config['datastore']['host']
+			port = config['datastore']['port']
+			collection = config['datastore']['collection']
+			credentials = {}
+			credentials['username'] = config['datastore']['username']
+			credentials['password'] = config['datastore']['password']
+			db_password = config['datastore']['password']
 
-			#@datastore = Database.new(db_host, db_port, db_schema, db_user_name, db_password)
-			#@datastore.connect
+			@datastore = Relational.new(host, port, collection, credentials)
 		end
-=end
+
 
 	end
 
@@ -239,7 +241,7 @@ class SearchTweets
 
 	def build_counts_request(rule, from_date=nil, to_date=nil, interval=nil, next_token=nil)
 
-		request = build_request(rule, from_date, to_date)
+		request = build_request(rule['value'], from_date, to_date)
 
 		if !interval.nil?
 			request[:bucket] = interval
@@ -256,9 +258,13 @@ class SearchTweets
 
 	def build_data_request(rule, from_date=nil, to_date=nil, max_results=nil, next_token=nil)
 
-		request = build_request(rule, from_date, to_date)
+		request = build_request(rule['value'], from_date, to_date)
 
 		request[:tag] = rule['tag'] if not rule['tag'].nil?
+		
+		if !rule['tag'].nil?
+			request[:tag] = rule['tag']
+		end
 
 		if !max_results.nil?
 			request[:maxResults] = max_results
@@ -352,7 +358,6 @@ class SearchTweets
 					filename = "#{filename_root}_#{num}"
 				end
 
-
 				puts "Storing Search API data in file: #{filename}"
 				File.open("#{@out_box}/#{filename}.json", "w") do |new_file|
 					new_file.write(temp.to_json)
@@ -371,8 +376,8 @@ class SearchTweets
 		@requester.url = @urlData
 		data = build_data_request(rule, start_time, end_time, max_results, next_token)
 
-		if (Time.now - @request_timestamp) < 1
-			sleep 1
+		if (Time.now - @request_timestamp) < 0.5
+			sleep 0.5
 		end
 		@request_timestamp = Time.now
 
@@ -390,7 +395,7 @@ class SearchTweets
 			puts "Quitting"
 			exit
 		end
-
+		
 		#Prepare to convert Search API JSON to hash.
 		api_response = []
 		api_response = JSON.parse(response.body)
@@ -403,6 +408,13 @@ class SearchTweets
 			puts "No results returned."
 			return api_response['next']
 		end
+		
+		if @save_syntax  #inject the filter syntax into the JSON
+			api_response['results'].each do |tweet|
+				tweet['matching_rules'][0]['filter'] = rule['value']
+			end
+		end
+
 
 		if @write_mode == "files" #write the file.
 
@@ -424,14 +436,14 @@ class SearchTweets
 					new_file.write(api_response.to_json)
 				end
 			end
-		elsif @write_mode == "datastore" #store in database.
+		elsif @write_mode == "database" #store in database.
 
 			results = []
 			results = api_response['results']
 
 			puts "Storing #{results.length} Tweets in data store..."
 
-			@datastore.store_batch_tweets(results)
+			@datastore.store_tweets(results)
 
 			#results.each do |tweet|
 			#	@datastore.store_tweet(tweet) #Sending in as dictionary/hash.
@@ -486,6 +498,8 @@ class SearchTweets
 
 		#TODO: puts "Total counts: #{@count_total}"
 		puts "#{@count_total}"
+		puts "Made #{@request_count} count requests."			
+
 
 		#puts "#{time_span} #{@count_total}"
 		#puts "#{time_span[4..5]}/#{time_span[0..3]} #{@count_total}" #useful for creating monthly plots
@@ -526,6 +540,8 @@ class SearchTweets
 			end
 		end
 
-	end #process_data
+		puts "Made #{@request_count} data requests."
+
+	end #get_data
 
 end #TweetSearch class.
